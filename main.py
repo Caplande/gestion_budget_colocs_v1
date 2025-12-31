@@ -1,11 +1,9 @@
-from src.utils.u1 import exe_sql, lister_contenu_tables, supprimer_tables,  creer_table_evenement
-from src.core.variables_metier import tables_metier
+from src.utils.reinit_bdd_vide import vider_bdd, creer_tables
+from db.db import print_schema_bdd
 
-exe_sql('requetes/vider_tables_metier.sql')
-
-lister_contenu_tables(tables_metier)
-
-supprimer_tables(tables_metier)
-
-creer_table_evenement()
-    
+if __name__ == "__main__":
+    vider_bdd()
+    print("Recréation des tables…")
+    creer_tables()
+    print("✅ Base prête à l’emploi")
+    print_schema_bdd()

@@ -1,26 +1,9 @@
-from src.core.variables_metier import conn
+from src.core.variables_metier import get_connection
 
-def exe_sql(path_sql_file):
-    # Exemple d'exécution de fichier .sql
-    # Connexion à la base
-    cur = conn.cursor()
 
-    # Lire le fichier SQL
-    with open(path_sql_file, 'r', encoding='utf-8') as f:
-        sql = f.read()
-
-    # Exécuter tout le contenu
-    cur.execute(sql)
-
-    # Valider les changements
-    conn.commit()
-
-    # Fermer la connexion
-    cur.close()
-    # conn.close()
-    
 def lister_contenu_tables(l_noms_tables):
     # Exemple de liste le contenu des tables passées en paramètre
+    conn = get_connection()
     cur = conn.cursor()
 
     for nom_table in l_noms_tables:
@@ -32,12 +15,13 @@ def lister_contenu_tables(l_noms_tables):
         print("\n")
 
     cur.close()
-    # 
-    
-def supprimer_tables(l_tables):
-    
-    # Exemple de suppression des tables passées en paramètre
+    conn.close()
 
+
+def supprimer_tables(l_tables):
+
+    # Exemple de suppression des tables passées en paramètre
+    conn = get_connection()
     cur = conn.cursor()
 
     for nom_table in l_tables:
@@ -46,9 +30,11 @@ def supprimer_tables(l_tables):
 
     conn.commit()
     cur.close()
-    # conn.close()
-    
+    conn.close()
+
+
 def creer_table_evenement():
+    conn = get_connection()
     cur = conn.cursor()
 
     # Requête SQL
@@ -71,6 +57,6 @@ def creer_table_evenement():
 
     # Nettoyage
     cur.close()
-    # conn.close()
+    conn.close()
 
     print("Table operation_individualisee créée avec succès.")
