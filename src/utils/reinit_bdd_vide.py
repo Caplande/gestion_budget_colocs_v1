@@ -1,8 +1,8 @@
 # db_reset.py
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
-from src.modeles.modeles import Base
-from db.db import engine
+from db.modeles import Base
+from db.db_bbc import engine
 
 
 Session = sessionmaker(bind=engine)
@@ -21,9 +21,11 @@ def vider_bdd():
         for table in tables:
             try:
                 conn.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE"))
-                print(f"✅ Table {table} vidée")
+                print(f"✅ Table {table} supprimée")
             except Exception as e:
-                print(f"⚠ Impossible de vider {table} : {e}")
+                print(f"⚠ Impossible de supprimer {table} : {e}")
+                return
+        print("✅ Base vidée")
 
 
 # 3️⃣ Créer toutes les tables définies dans modeles.py

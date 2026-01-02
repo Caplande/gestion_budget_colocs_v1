@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PWA + FastAPI Demo</title>
+
+    <!-- Lien vers le manifest pour l’installation comme appli -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Couleur de la barre Android -->
+    <meta name="theme-color" content="#317EFB">
+</head>
+<body>
+    <h1>Demo PWA + FastAPI</h1>
+
+    <input id="msgInput" placeholder="Tape un message">
+    <button onclick="sendMessage()">Envoyer</button>
+
+    <h2>Messages :</h2>
+    <ul id="messages"></ul>
+
+    <script src="app.js"></script>
+
+    <script>
+      // Enregister le service worker
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js");
+      }
+    </script>
+</body>
+</html>

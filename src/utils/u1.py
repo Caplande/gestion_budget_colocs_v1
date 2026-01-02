@@ -1,41 +1,32 @@
-from src.core.variables_metier import get_connection
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.orm import Session
+from db.modeles import Base
+from db.db_bbc import engine, get_cursor
 
 
 def lister_contenu_tables(l_noms_tables):
     # Exemple de liste le contenu des tables passées en paramètre
-    conn = get_connection()
-    cur = conn.cursor()
-
-    for nom_table in l_noms_tables:
-        cur.execute(f"SELECT * FROM {nom_table};")
-        rows = cur.fetchall()
-        print(f"Contenu de la table {nom_table}:")
-        for row in rows:
-            print(row)
-        print("\n")
-
-    cur.close()
-    conn.close()
+    cur = get_cursor()
+    with cur:
+        for nom_table in l_noms_tables:
+            cur.execute(f"SELECT * FROM {nom_table};")
+            rows = cur.fetchall()
+            print(f"Contenu de la table {nom_table}:")
+            for row in rows:
+                print(row)
+            print("\n")
 
 
 def supprimer_tables(l_tables):
 
     # Exemple de suppression des tables passées en paramètre
-    conn = get_connection()
-    cur = conn.cursor()
+    cur = get_cursor()
+    with cur:
+        for nom_table in l_tables:
+            cur.execute(f"DROP TABLE IF EXISTS {nom_table} CASCADE;")
+            print(f"Table {nom_table} supprimée.")
 
-    for nom_table in l_tables:
-        cur.execute(f"DROP TABLE IF EXISTS {nom_table} CASCADE;")
-        print(f"Table {nom_table} supprimée.")
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def creer_table_evenement():
-    conn = get_connection()
-    cur = conn.cursor()
+    cur = get_cursor()
 
     # Requête SQL
     sql = """
@@ -50,13 +41,12 @@ def creer_table_evenement():
         CHECK (statut IN ('OUVERTE','CLOTUREE'))
     );
     """
-
-    # Exécution
-    cur.execute(sql)
-    conn.commit()
-
-    # Nettoyage
-    cur.close()
-    conn.close()
+    with cur:
+        # Exécution
+        cur.execute(sql)
 
     print("Table operation_individualisee créée avec succès.")
+
+
+if __name__ == "__main__":
+    pass

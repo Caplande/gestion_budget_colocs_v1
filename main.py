@@ -1,5 +1,5 @@
 from src.utils.reinit_bdd_vide import vider_bdd, creer_tables
-from db.db import print_schema_bdd
+from db.db_bbc import print_schema_bdd
 
 if __name__ == "__main__":
     vider_bdd()
