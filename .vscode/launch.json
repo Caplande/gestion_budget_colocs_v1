@@ -25,7 +25,7 @@
                 "PYTHONPATH": "${workspaceFolder}",
                 "PYTHONIOENCODING": "utf-8"}
         },{
-            "name": "Débogueur Python : DB",
+            "name": "Débogueur Python : DB BBC",
             "type": "debugpy",
             "request": "launch",
             "console": "integratedTerminal",
@@ -44,6 +44,26 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}",
                 "PYTHONIOENCODING": "utf-8"}
-        },
+        },{
+            "name": "Débogueur Python : Essai_2",
+            "type": "debugpy",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "program": "jeu_d_essai/essai_2.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "PYTHONIOENCODING": "utf-8"}
+        },{
+            "name": "Débogueur Python : Essai_3",
+            "type": "debugpy",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "program": "jeu_d_essai/essai_3.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "PYTHONIOENCODING": "utf-8"}
+        }
     ]
 }

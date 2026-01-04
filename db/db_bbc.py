@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, inspect, text
 from db.modeles import Base
 
 engine = create_engine(
-    "postgresql+psycopg2://postgres:PO1357po@localhost:5432/coloc_db", echo=True
+    "postgresql+psycopg2://postgres:PO1357po@localhost:5432/coloc_db",  # echo=True
 )  # True pour voir les requêtes SQL exécutées
 
 
@@ -113,5 +113,38 @@ def redefinir_bdd():
     Base.metadata.create_all(engine)
 
 
+def fermer_sessions_postgres(engine):
+    """
+    Ferme toutes les sessions PostgreSQL sur la base courante,
+    sauf la session appelante.
+    """
+    sql = """
+    SELECT pg_terminate_backend(pid)
+    FROM pg_stat_activity
+    WHERE datname = current_database()
+      AND pid <> pg_backend_pid();
+    """
+
+    with engine.begin() as conn:
+        conn.execute(text(sql))
+
+
+def voir_sessions_ouvertes(engine):
+    """
+    Affiche les sessions PostgreSQL ouvertes sur la base courante.
+    """
+    sql = """
+    SELECT pid, usename, application_name, client_addr, state, query
+    FROM pg_stat_activity
+    WHERE datname = current_database();
+    """
+
+    with engine.begin() as conn:
+        result = conn.execute(text(sql))
+        for row in result:
+            print(row)
+
+
 if __name__ == "__main__":
-    print_schema_bdd()
+    voir_sessions_ouvertes
+    # print_schema_bdd()

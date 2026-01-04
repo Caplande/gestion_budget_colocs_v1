@@ -1,8 +1,8 @@
 from datetime import date
 from decimal import Decimal
-from sqlalchemy import text
 from sqlalchemy.orm import Session
-from db.db_bbc import engine, fetch_one, execute_sql_sa, fermer_sessions_postgres
+from sqlalchemy import text
+from db.db_bbc import engine, execute_sql_sa, fermer_sessions_postgres
 from db.modeles import (
     CompteComptable,
     Personne,
@@ -35,45 +35,10 @@ def vider_toutes_les_tables(engine):
         conn.execute(text(sql))
 
 
-def editer_journal():
-    with engine.begin() as conn:
-        # Journal comptable
-        sql = """
-        SELECT
-        e.date_ecriture,
-        c.numero,
-        c.libelle,
-        e.debit,
-        e.credit
-        FROM ecriture e
-        JOIN compte_comptable c ON c.id = e.compte_id
-        ORDER BY e.date_ecriture;
-        """
-        # Exécuter la requête et afficher les résultats
-        result = execute_sql_sa(sql)
-        for row in result:
-            print(row)
-
-
-def solde_par_personne():
-    sql = """
-    SELECT
-    c.numero,
-    SUM(COALESCE(e.credit,0)) - SUM(COALESCE(e.debit,0)) AS solde
-    FROM ecriture e
-    JOIN compte_comptable c ON c.id = e.compte_id
-    WHERE c.numero LIKE '467%'
-    GROUP BY c.numero;
-    """
-    # Exécuter la requête et afficher les résultats
-    result = execute_sql_sa(sql)
-    for row in result:
-        print(row)
-
-
-# 🧱 Étape 1 — Création des comptes comptables
 def creer_donnees_exemple():
+    # Fermer toutes les sessions ouvertes et vider les tables pour dev
     fermer_sessions_postgres(engine)
+    # Ici, tu peux appeler ta fonction de vidage de tables si besoin
     vider_toutes_les_tables(engine)
     with Session(engine) as session:
 
@@ -93,18 +58,18 @@ def creer_donnees_exemple():
         session.add_all([c_6061, c_467A, c_467B, c_467C, c_512])
         session.flush()
 
-        # 👤 Étape 2 — Personnes
+        # 👤 Personnes
         alice = Personne(nom="Dupont", prenom="Alice", compte_tiers=c_467A)
         bob = Personne(nom="Martin", prenom="Bob", compte_tiers=c_467B)
         claire = Personne(nom="Durand", prenom="Claire", compte_tiers=c_467C)
 
         session.add_all([alice, bob, claire])
 
-        # 📒 Étape 3 — Journal
+        # 📒 Journal
         journal_od = Journal(code="OD", libelle="Opérations diverses")
         session.add(journal_od)
 
-        # 🧭 Étape 4 — OI (axe analytique)
+        # 🧭 OI (facultative)
         oi = OperationIndividualisee(
             code="VOYAGE_ESPAGNE",
             libelle="Voyage Espagne été",
@@ -112,7 +77,7 @@ def creer_donnees_exemple():
         )
         session.add(oi)
 
-        # 📄 Étape 5 — Événement métier
+        # 📄 Événement métier
         evenement = Evenement(
             code="EVT_001",
             libelle="Courses supermarché",
@@ -122,94 +87,119 @@ def creer_donnees_exemple():
         session.add(evenement)
         session.flush()
 
-        # ✍️ Étape 6 — Écritures comptables générées
-        # 6.1 Débit charge
-        e1 = Ecriture(
+        # ✍️ Écritures comptables
+        montant_total = Decimal("90.00")
+        nb_colocs = 3
+        part_coloc = montant_total / nb_colocs  # 30 € chacun
+
+        # 1️⃣ Débit charge 6061
+        e_charge = Ecriture(
             date_ecriture=date.today(),
             libelle="Courses alimentaires",
-            debit=Decimal("90.00"),
+            debit=montant_total,
             credit=None,
             compte=c_6061,
             evenement=evenement,
             journal=journal_od,
             oi=oi,
         )
-        # 6.2 Crédit tiers (répartition)
-        e2 = Ecriture(
+
+        # 2️⃣ Crédit comptes colocataires (répartition)
+        e_alice = Ecriture(
             date_ecriture=date.today(),
             libelle="Part Alice",
             debit=None,
-            credit=Decimal("30.00"),
+            credit=part_coloc,
             compte=c_467A,
             evenement=evenement,
             journal=journal_od,
             oi=oi,
         )
-
-        e3 = Ecriture(
+        e_bob = Ecriture(
             date_ecriture=date.today(),
             libelle="Part Bob",
             debit=None,
-            credit=Decimal("30.00"),
+            credit=part_coloc,
             compte=c_467B,
             evenement=evenement,
             journal=journal_od,
             oi=oi,
         )
-
-        e4 = Ecriture(
+        e_claire = Ecriture(
             date_ecriture=date.today(),
             libelle="Part Claire",
             debit=None,
-            credit=Decimal("30.00"),
+            credit=part_coloc,
             compte=c_467C,
             evenement=evenement,
             journal=journal_od,
             oi=oi,
         )
-        e5 = Ecriture(  # paiement Alice
+
+        # 3️⃣ Paiement réel par Alice : banque 512 diminue, dette Alice diminue
+        e_paiement_alice = Ecriture(
             date_ecriture=date.today(),
-            libelle="Paiement courses supermarché",
-            debit=None,
-            credit=Decimal("90.00"),
-            compte=c_512,
+            libelle="Paiement Alice",
+            debit=part_coloc,
+            credit=part_coloc,
+            compte=c_512,  # banque
             evenement=evenement,
             journal=journal_od,
             oi=oi,
         )
-        session.add_all([e1, e2, e3, e4, e5])
-
-        # Solde de la dette envers Alice
-        solde_alice = Ecriture(
+        # Ajuster la dette d'Alice
+        e_dette_alice = Ecriture(
             date_ecriture=date.today(),
-            libelle="Remboursement Alice",
-            debit=Decimal("90.00"),
+            libelle="Règlement Alice",
+            debit=part_coloc,
             credit=None,
             compte=c_467A,
             evenement=evenement,
             journal=journal_od,
             oi=oi,
         )
-        session.add_all([e5, solde_alice])
-        session.commit()
-        # 🔎 Vérifications possibles
-        # editer_journal()
 
-        # Solde par personne
-        # solde_par_personne()
+        session.add_all(
+            [e_charge, e_alice, e_bob, e_claire, e_paiement_alice, e_dette_alice]
+        )
+
+        session.commit()
+
+    # 🔎 Vérifications : Journal comptable
+    print(
+        "******************************** JOURNAL *******************************************"
+    )
+    sql_journal = """
+    SELECT
+        e.date_ecriture,
+        c.numero,
+        c.libelle,
+        e.debit,
+        e.credit
+    FROM ecriture e
+    JOIN compte_comptable c ON c.id = e.compte_id
+    ORDER BY e.date_ecriture, c.numero;
+    """
+    for row in execute_sql_sa(sql_journal):
+        print(row)
+
+    # 🔎 Solde par personne
+    print(
+        "********************************* SOLDE PAR PERSONNE *****************************************"
+    )
+    sql_solde = """
+    SELECT
+        c.numero,
+        SUM(COALESCE(e.credit,0)) - SUM(COALESCE(e.debit,0)) AS solde
+    FROM ecriture e
+    JOIN compte_comptable c ON c.id = e.compte_id
+    WHERE c.numero LIKE '467%'
+    GROUP BY c.numero
+    ORDER BY c.numero;
+    """
+    for row in execute_sql_sa(sql_solde):
+        print(row)
 
 
 if __name__ == "__main__":
-    if True:
-        creer_donnees_exemple()
-        print(
-            "******************************** JOURNAL *******************************************"
-        )
-        editer_journal()
-        print(
-            "********************************* SOLDE PAR PERSONNE *****************************************"
-        )
-        solde_par_personne()
-    if False:
-        fermer_sessions_postgres(engine)
-        vider_toutes_les_tables(engine)
+    creer_donnees_exemple()
